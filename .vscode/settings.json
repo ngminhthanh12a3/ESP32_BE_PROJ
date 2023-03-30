@@ -1,0 +1,6 @@
+{
+  "files.associations": {
+    "*.ts": "typescript",
+    "crc16.h": "c"
+  }
+}
