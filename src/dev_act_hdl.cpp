@@ -1,8 +1,4 @@
-#include <Arduino.h>
 #include "dev_act_hdl.h"
-
-extern BLECharacteristic *pCharacteristic[4];
-extern bool deviceConnected;
 
 // MAX30102
 const int32_t ledsBufferLength = 100; // data length
@@ -38,7 +34,7 @@ void Flip(uint8_t buffer_len, uint8_t *buffer)
 	}
 }
 
-void HandlerDeviceAction(uint8_t CMD, uint8_t buffer_len, uint8_t *buffer)
+void HandlerDeviceAction(uint8_t CMD, uint8_t buffer_len, uint8_t *buffer, BlynkWifi* cur_Bylnk)
 {
 	// Serial.printf("\nFP_ Handle");
 	uint8_t devID = CMD & 0x7Fu;
@@ -46,52 +42,31 @@ void HandlerDeviceAction(uint8_t CMD, uint8_t buffer_len, uint8_t *buffer)
 	{
 	case DEV_0_ID:
 	{
+		// Serial.printf("\r\nParse complete, connected: %d", cur_Bylnk->connected());
+		if (!cur_Bylnk->connected())
+			return;
+
 		ledBufIndex = *(buffer + buffer_len - 1);
 		// Serial.printf("\nledI = %d", ledBufIndex);
-		MAX30102_FUL_BUF[ledBufIndex] = *((uint16_t *)buffer + 0);
-		MAX30102_FUL_BUF[IR_OFFSET + ledBufIndex] = *((uint16_t *)buffer + 1);
-		((uint32_t *)MAX30102_FUL_BUF)[M_32_FUL_BUF_SIZE - 2] = *((uint32_t *)buffer + 1);
-		((uint32_t *)MAX30102_FUL_BUF)[M_32_FUL_BUF_SIZE - 1] = *((uint32_t *)buffer + 2);
 
-		//
-		// if (!ledBufIndex || !((ledBufIndex + 1) % 50))
-		// {
-		// 	ledBufIndex++;
-		// 	pCharacteristic[DEV_2_ID]->setValue(ledBufIndex);
-		// 	ledBufIndex--;
+		// MAX30102_FUL_BUF[ledBufIndex] = *((uint16_t *)buffer + 0);
+		// MAX30102_FUL_BUF[IR_OFFSET + ledBufIndex] = *((uint16_t *)buffer + 1);
+		uint16_t red = *((uint16_t *)buffer + 0), ir = *((uint16_t *)buffer + 1);
+		cur_Bylnk->virtualWrite(V2, red);
+		cur_Bylnk->virtualWrite(V3, ir);
 
-		// 	pCharacteristic[DEV_2_ID]->notify();
-		// 	delay(3); // bluetooth stack will go into congestion, if too many packets are sent, in 6 hours test i was able to go as low as 3ms
-		// }
-
-		//
-		if (ledBufIndex == (ledsBufferLength - 1))
+		// Serial.printf("\r\nCur RED = %d, IR = %D, buffer len = %d", red, ir, buffer_len);
+		if (buffer_len == 13)
 		{
-			// notify changed value
-			if (deviceConnected)
-			{
-				pCharacteristic[DEV_0_ID]
-					->setValue((uint8_t *)MAX30102_FUL_BUF, M_FUL_BUF_SIZE * 2u);
-				pCharacteristic[DEV_0_ID]->notify();
-				delay(3); // bluetooth stack will go into congestion, if too many packets are sent, in 6 hours test i was able to go as low as 3ms
-			}
-
-			//
-			ledBufIndex = 0;
+			uint32_t spo2 = *((uint32_t *)buffer + 1);
+			uint32_t hr = *((uint32_t *)buffer + 2);
+			cur_Bylnk->virtualWrite(V0, hr);
+			cur_Bylnk->virtualWrite(V1, spo2);
+			// Serial.printf("\r\nCur HR = %d, SPO2 = %D", hr, spo2);
 		}
 		break;
 	}
 	case DEV_1_ID:
-		// notify changed value
-		if (deviceConnected)
-		{
-			// pCharacteristic[1]->setValue(buffer, buffer_len);
-			// pCharacteristic[1]->notify();
-			// Flip(buffer_len, buffer);
-			pCharacteristic[DEV_1_ID]->setValue(buffer, buffer_len);
-			pCharacteristic[DEV_1_ID]->notify();
-			delay(3); // bluetooth stack will go into congestion, if too many packets are sent, in 6 hours test i was able to go as low as 3ms
-		}
 		break;
 	default:
 		break;

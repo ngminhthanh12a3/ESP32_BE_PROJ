@@ -6,7 +6,7 @@
 #include "CRC16.h"
 #include "FRAME_PARSE.h"
 
-//#define DEV_1_ID 0x1u
+// #define DEV_1_ID 0x1u
 
 //
 #define DEV_1_PORT GPIOB
@@ -34,6 +34,6 @@ enum DEV_MOD
 	DEV_R_MOD
 };
 
-void HandlerDeviceAction(uint8_t CMD, uint8_t buffer_len, uint8_t *buffer);
+void HandlerDeviceAction(uint8_t CMD, uint8_t buffer_len, uint8_t *buffer, BlynkWifi* cur_Bylnk);
 
 #endif //__DEV_ACT_HDL_H__
