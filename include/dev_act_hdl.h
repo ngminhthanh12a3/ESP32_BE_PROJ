@@ -34,6 +34,6 @@ enum DEV_MOD
 	DEV_R_MOD
 };
 
-void HandlerDeviceAction(uint8_t CMD, uint8_t buffer_len, uint8_t *buffer, BlynkWifi* cur_Bylnk);
+void HandlerDeviceAction(uint8_t CMD, uint8_t buffer_len, uint8_t *buffer, ThingsBoard* cur_tb);
 
 #endif //__DEV_ACT_HDL_H__

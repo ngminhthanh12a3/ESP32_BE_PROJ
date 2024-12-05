@@ -1,5 +1,5 @@
 #include "dev_act_hdl.h"
-
+volatile int red, ir, hr, spo2;
 // MAX30102
 const int32_t ledsBufferLength = 100; // data length
 uint8_t IR_OFFSET = 100;
@@ -19,10 +19,10 @@ uint32_t MAX30102_FUL_BUF[M_FUL_BUF_SIZE];
 #endif
 uint16_t ledBufIndex = 0;
 // int32_t MAX30102_O_BUF[4];
-int32_t spo2 = 0;		   // SPO2 value
-int8_t validSPO2 = 0;	   // indicator to show if the SPO2 calculation is valid
-int32_t heartRate = 0;	   // heart rate value
-int8_t validHeartRate = 0; // indicator to show if the heart rate calculation is valid
+// int32_t spo2 = 0;		   // SPO2 value
+// int8_t validSPO2 = 0;	   // indicator to show if the SPO2 calculation is valid
+// int32_t heartRate = 0;	   // heart rate value
+// int8_t validHeartRate = 0; // indicator to show if the heart rate calculation is valid
 
 void Flip(uint8_t buffer_len, uint8_t *buffer)
 {
@@ -34,7 +34,7 @@ void Flip(uint8_t buffer_len, uint8_t *buffer)
 	}
 }
 
-void HandlerDeviceAction(uint8_t CMD, uint8_t buffer_len, uint8_t *buffer, BlynkWifi* cur_Bylnk)
+void HandlerDeviceAction(uint8_t CMD, uint8_t buffer_len, uint8_t *buffer, ThingsBoard *cur_tb)
 {
 	// Serial.printf("\nFP_ Handle");
 	uint8_t devID = CMD & 0x7Fu;
@@ -42,27 +42,24 @@ void HandlerDeviceAction(uint8_t CMD, uint8_t buffer_len, uint8_t *buffer, Blynk
 	{
 	case DEV_0_ID:
 	{
-		// Serial.printf("\r\nParse complete, connected: %d", cur_Bylnk->connected());
-		if (!cur_Bylnk->connected())
-			return;
 
 		ledBufIndex = *(buffer + buffer_len - 1);
-		// Serial.printf("\nledI = %d", ledBufIndex);
 
-		// MAX30102_FUL_BUF[ledBufIndex] = *((uint16_t *)buffer + 0);
-		// MAX30102_FUL_BUF[IR_OFFSET + ledBufIndex] = *((uint16_t *)buffer + 1);
-		uint16_t red = *((uint16_t *)buffer + 0), ir = *((uint16_t *)buffer + 1);
-		cur_Bylnk->virtualWrite(V2, red);
-		cur_Bylnk->virtualWrite(V3, ir);
+		red = *((uint16_t *)buffer + 0);
+		ir = *((uint16_t *)buffer + 1);
+		// cur_Bylnk->virtualWrite(V2, red);
+		// cur_Bylnk->virtualWrite(V3, ir);
+		cur_tb->sendTelemetryData("red", red);
+		cur_tb->sendTelemetryData("ir", ir);
 
-		// Serial.printf("\r\nCur RED = %d, IR = %D, buffer len = %d", red, ir, buffer_len);
 		if (buffer_len == 13)
 		{
-			uint32_t spo2 = *((uint32_t *)buffer + 1);
-			uint32_t hr = *((uint32_t *)buffer + 2);
-			cur_Bylnk->virtualWrite(V0, hr);
-			cur_Bylnk->virtualWrite(V1, spo2);
-			// Serial.printf("\r\nCur HR = %d, SPO2 = %D", hr, spo2);
+			spo2 = *((uint32_t *)buffer + 1);
+			hr = *((uint32_t *)buffer + 2);
+			// cur_Bylnk->virtualWrite(V0, hr);
+			// cur_Bylnk->virtualWrite(V1, spo2);
+			cur_tb->sendTelemetryData("heartRate", hr);
+			cur_tb->sendTelemetryData("spo2", spo2);
 		}
 		break;
 	}
